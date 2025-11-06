@@ -1,13 +1,14 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[project]
+[tool.poetry]
 name = "gcp-oidc"
 version = "0.1.0"
 description = "FastAPI application for working with Google Cloud OIDC."
-requires-python = ">=3.14"
-dependencies = [
-    "fastapi",
-    "uvicorn[standard]",
-]
+authors = ["Nickolas Kraus"]
+
+[tool.poetry.dependencies]
+python = ">=3.14,<4.0"
+fastapi = {extras = ["standard"], version = "*"}
+uvicorn = {extras = ["standard"], version = "*"}
+
+[build-system]
+requires = ["poetry-core>=1.5.0"]
+build-backend = "poetry.core.masonry.api"
