@@ -1,6 +1,8 @@
+import http
 import logging
 
 import fastapi
+import httpx
 import jwt
 from google.auth.exceptions import GoogleAuthError
 from google.auth.transport.requests import Request as GoogleAuthRequest
@@ -12,14 +14,35 @@ AUDIENCE = "https://hello-jk5drksivq-uc.a.run.app"
 
 
 @app.get("/")
-async def root():
+async def root(request: fastapi.Request):
     token = fetch_id_token(request=GoogleAuthRequest(), audience=AUDIENCE)
-    credentials = await verify_oidc_token(token=token)
+
+    client = httpx.AsyncClient()
+    url = "https://hello-jk5drksivq-uc.a.run.app/verify-oidc-token"
+    headers = {
+        "X-Serverless-Authorization": f"Bearer {token}",
+    }
+
+    try:
+        response = client.request(method=http.HTTPMethod.GET, url=url, headers=headers)
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        raise fastapi.HTTPException(
+            status_code=exc.response.status_code, detail=exc.response.text
+        ) from exc
+
+    return response
+
+
+@app.get("/verify-oidc-token")
+async def verify_oidc_token(request: fastapi.Request):
+    token = fetch_id_token(request=GoogleAuthRequest(), audience=AUDIENCE)
+    credentials = await _verify_oidc_token(token=token)
     logging.info(f"Credentials: {credentials}")
     return {"message": f"Credentials: {credentials}"}
 
 
-async def verify_oidc_token(
+async def _verify_oidc_token(
     token: str,
 ) -> fastapi.security.http.HTTPAuthorizationCredentials:
     """Verify a Google-signed OpenID Connect ID token with enhanced debugging."""
