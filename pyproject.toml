@@ -10,6 +10,7 @@ python = ">=3.13,<4.0"
 fastapi = {extras = ["standard"], version = "*"}
 uvicorn = {extras = ["standard"], version = "*"}
 google-auth = "^2.43.0"
+google-cloud-logging = "^3.11.2"
 httpx = "^0.28.1"
 pyjwt = "^2.10.1"
 requests = "^2.32.5"
