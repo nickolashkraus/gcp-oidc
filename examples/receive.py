@@ -1,5 +1,8 @@
 import jwt
 from fastapi import HTTPException, Request
+from google.auth.exceptions import GoogleAuthError
+from google.auth.transport.requests import Request as GoogleAuthRequest
+from google.oauth2.id_token import verify_oauth2_token
 from jwt import PyJWTError
 
 
@@ -11,10 +14,11 @@ def verify_authorized_request(request: Request, expected_audience: str) -> str:
     3. Returns the `email` claim.
 
     WARNING: Google automatically removes the signature of a JWT sent with the
-    `Authorization` or `X-Serverless-Authorization` header. Therefore, it is
-    impossible to re-verify the token in the application code. For this reason,
-    we must rely on Cloud Run's authenticating proxy and IAM for
-    authentication.
+    `X-Serverless-Authorization` header. Therefore, it is impossible to verify
+    the token in the application code. For this reason, we must rely on Cloud
+    Run's authenticating proxy and IAM for authentication if the Google-signed
+    OpenID Connect ID token is provided using this header instead of the
+    standard `Authorization` header.
 
     Furthermore, even if a service is publicly accessible, Google will still
     remove the signature of the JWT.
@@ -38,19 +42,21 @@ def verify_authorized_request(request: Request, expected_audience: str) -> str:
             return email
     """
     auth_header = request.headers.get("Authorization")
-    if not auth_header:
-        auth_header = request.headers.get("X-Serverless-Authorization")
+    serverless_auth_header = request.headers.get("X-Serverless-Authorization")
 
-    if not auth_header:
+    if not (auth_header or serverless_auth_header):
         raise HTTPException(
             status_code=401, detail="Missing authorization header"
         )
 
     try:
-        auth_type, token = auth_header.split(" ", 1)
+        if auth_header:
+            auth_type, token = auth_header.split(" ", 1)
+        else:
+            auth_type, token = serverless_auth_header.split(" ", 1)
     except ValueError:
         raise HTTPException(
-            status_code=401, detail="Malformed Authorization header"
+            status_code=401, detail="Malformed authorization header"
         )
 
     if auth_type.lower() != "bearer":
@@ -61,32 +67,48 @@ def verify_authorized_request(request: Request, expected_audience: str) -> str:
 
     try:
         # WARNING: The following will always produce a 'Could not verify token
-        # signature' error:
+        # signature' error if the token is provided using the
+        # `X-Serverless-Authorization` header:
         #
-        #   claims = id_token.verify_oauth2_token(
+        #   claims = verify_oauth2_token(
         #       token, GoogleAuthRequest(), expected_audience
         #   )
         #
         # Therefore, the JWT must be decoded without verifying the signature.
         # If the service is publicly accessible, you can basically use whatever
-        # JWT you want as long as it is added to the `Authorization` or
+        # JWT you want as long as it is added to the
         # `X-Serverless-Authorization` header and decodes properly.
-        claims = jwt.decode(
-            token,
-            options={
-                "verify_signature": False,
-                "verify_aud": True,
-                "verify_iss": True,
-            },
-            audience=expected_audience,
-            issuer=["https://accounts.google.com", "accounts.google.com"],
-        )
+        #
+        # In order to verify the token via code, it must be provided using the
+        # `Authorization` header. If both headers are provided, only the
+        # `X-Serverless-Authorization` header is checked by the Google Cloud
+        # Run platform.
+        if auth_header:
+            claims = verify_oauth2_token(
+                token, GoogleAuthRequest(), expected_audience
+            )
+        else:
+            claims = jwt.decode(
+                token,
+                options={
+                    "verify_signature": False,
+                    "verify_aud": True,
+                    "verify_iss": True,
+                },
+                audience=expected_audience,
+                issuer=["https://accounts.google.com", "accounts.google.com"],
+            )
         email = claims.get("email")
         if not email:
             raise HTTPException(
                 status_code=401, detail="Token missing `email` claim"
             )
         return email
+    except GoogleAuthError as exc:
+        raise HTTPException(
+            status_code=401,
+            detail=f"Invalid token: {exc}",
+        ) from exc
     except PyJWTError as exc:
         raise HTTPException(
             status_code=401, detail=f"Invalid token: {exc}"
