@@ -42,16 +42,21 @@ def verify_authorized_request(request: Request, expected_audience: str) -> str:
         auth_header = request.headers.get("X-Serverless-Authorization")
 
     if not auth_header:
-        raise HTTPException(status_code=401, detail="Missing authorization header")
+        raise HTTPException(
+            status_code=401, detail="Missing authorization header"
+        )
 
     try:
         auth_type, token = auth_header.split(" ", 1)
     except ValueError:
-        raise HTTPException(status_code=401, detail="Malformed Authorization header")
+        raise HTTPException(
+            status_code=401, detail="Malformed Authorization header"
+        )
 
     if auth_type.lower() != "bearer":
         raise HTTPException(
-            status_code=401, detail=f"Unsupported authentication type: {auth_type}"
+            status_code=401,
+            detail=f"Unsupported authentication type: {auth_type}",
         )
 
     try:
@@ -78,7 +83,11 @@ def verify_authorized_request(request: Request, expected_audience: str) -> str:
         )
         email = claims.get("email")
         if not email:
-            raise HTTPException(status_code=401, detail="Token missing `email` claim")
+            raise HTTPException(
+                status_code=401, detail="Token missing `email` claim"
+            )
         return email
     except PyJWTError as exc:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {exc}") from exc
+        raise HTTPException(
+            status_code=401, detail=f"Invalid token: {exc}"
+        ) from exc
