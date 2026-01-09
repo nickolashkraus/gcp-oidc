@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "gcp-oidc"
 version = "0.1.0"
-description = "FastAPI application for working with Google Cloud OIDC."
+description = "Service-to-service authentication using Google-signed OIDC tokens."
 authors = ["Nickolas Kraus"]
 package-mode = false
 

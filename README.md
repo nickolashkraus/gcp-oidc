@@ -1,6 +1,6 @@
 # gcp-oidc
 
-An example application demonstrating service-to-service authentication using
+Example applications demonstrating service-to-service authentication using
 Google-signed OpenID Connect ID tokens.
 
 See the following blog post:
