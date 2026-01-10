@@ -11,6 +11,10 @@ def verify_authorized_request(request: Request, expected_audience: str) -> str:
 
     1. Extracts the token from the request headers.
     2. Decodes the token and validates its claims (`iss`, `aud`).
+
+       NOTE: The signature is not validated when the token is provided using
+       the `X-Serverless-Authorization` header.
+
     3. Returns the `email` claim.
 
     WARNING: Google automatically removes the signature of a JWT sent with the
@@ -50,10 +54,12 @@ def verify_authorized_request(request: Request, expected_audience: str) -> str:
         )
 
     try:
-        if auth_header:
-            auth_type, token = auth_header.split(" ", 1)
-        else:
+        # If both headers are provided, only check the
+        # `X-Serverless-Authorization` header.
+        if serverless_auth_header:
             auth_type, token = serverless_auth_header.split(" ", 1)
+        else:
+            auth_type, token = auth_header.split(" ", 1)
     except ValueError:
         raise HTTPException(
             status_code=401, detail="Malformed authorization header"
@@ -83,11 +89,7 @@ def verify_authorized_request(request: Request, expected_audience: str) -> str:
         # `Authorization` header. If both headers are provided, only the
         # `X-Serverless-Authorization` header is checked by the Google Cloud
         # Run platform.
-        if auth_header:
-            claims = verify_oauth2_token(
-                token, GoogleAuthRequest(), expected_audience
-            )
-        else:
+        if serverless_auth_header:
             claims = jwt.decode(
                 token,
                 options={
@@ -97,6 +99,10 @@ def verify_authorized_request(request: Request, expected_audience: str) -> str:
                 },
                 audience=expected_audience,
                 issuer=["https://accounts.google.com", "accounts.google.com"],
+            )
+        else:
+            claims = verify_oauth2_token(
+                token, GoogleAuthRequest(), expected_audience
             )
         email = claims.get("email")
         if not email:
