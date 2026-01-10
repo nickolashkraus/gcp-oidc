@@ -1,3 +1,5 @@
+import http
+
 import jwt
 from fastapi import HTTPException, Request
 from google.auth.exceptions import GoogleAuthError
@@ -50,7 +52,8 @@ def verify_authorized_request(request: Request, expected_audience: str) -> str:
 
     if not (auth_header or serverless_auth_header):
         raise HTTPException(
-            status_code=401, detail="Missing authorization header"
+            status_code=http.HTTPStatus.UNAUTHORIZED,
+            detail="Missing authorization header",
         )
 
     try:
@@ -62,12 +65,13 @@ def verify_authorized_request(request: Request, expected_audience: str) -> str:
             auth_type, token = auth_header.split(" ", 1)
     except ValueError:
         raise HTTPException(
-            status_code=401, detail="Malformed authorization header"
+            status_code=http.HTTPStatus.UNAUTHORIZED,
+            detail="Malformed authorization header",
         )
 
     if auth_type.lower() != "bearer":
         raise HTTPException(
-            status_code=401,
+            status_code=http.HTTPStatus.UNAUTHORIZED,
             detail="Unsupported authentication type: %s" % auth_type,
         )
 
@@ -107,15 +111,17 @@ def verify_authorized_request(request: Request, expected_audience: str) -> str:
         email = claims.get("email")
         if not email:
             raise HTTPException(
-                status_code=401, detail="Token missing `email` claim"
+                status_code=http.HTTPStatus.UNAUTHORIZED,
+                detail="Token missing `email` claim",
             )
         return email
     except GoogleAuthError as exc:
         raise HTTPException(
-            status_code=401,
+            status_code=http.HTTPStatus.UNAUTHORIZED,
             detail="Invalid token: %s" % exc,
         ) from exc
     except PyJWTError as exc:
         raise HTTPException(
-            status_code=401, detail="Invalid token: %s" % exc
+            status_code=http.HTTPStatus.UNAUTHORIZED,
+            detail="Invalid token: %s" % exc,
         ) from exc
