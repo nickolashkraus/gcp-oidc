@@ -18,7 +18,7 @@ def make_authorized_request(endpoint: str, audience: str) -> requests.Response:
       - https://github.com/googleapis/google-auth-library-python
 
     Args:
-        endpoint: URL of the request (e.g., https://service.run.app/api/v1/).
+        endpoint: URL of the request (e.g., https://service.a.run.app/api/v1/).
         audience: Cloud Run service URL used for token validation (typically
             the same as endpoint's base URL unless using a custom audience).
 
