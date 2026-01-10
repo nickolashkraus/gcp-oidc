@@ -31,8 +31,8 @@ def make_authorized_request(endpoint: str, audience: str) -> requests.Response:
 
     Example:
         response = make_authorized_request(
-            endpoint='https://service-b.run.app/api/v1/',
-            audience='https://service-b.run.app'
+            endpoint='https://service-b.a.run.app/api/v1/',
+            audience='https://service-b.a.run.app'
         )
     """
     token = fetch_id_token(GoogleAuthRequest(), audience)

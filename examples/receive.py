@@ -42,7 +42,7 @@ def verify_authorized_request(request: Request, expected_audience: str) -> str:
         @app.get("/api/v1")
         def handle_request(request: Request):
             email = verify_authorized_request(
-                request, expected_audience="https://my-service.run.app"
+                request, expected_audience="https://service-b.a.run.app"
             )
             return email
     """
