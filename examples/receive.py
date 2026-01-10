@@ -62,7 +62,7 @@ def verify_authorized_request(request: Request, expected_audience: str) -> str:
     if auth_type.lower() != "bearer":
         raise HTTPException(
             status_code=401,
-            detail=f"Unsupported authentication type: {auth_type}",
+            detail="Unsupported authentication type: %s" % auth_type,
         )
 
     try:
@@ -107,9 +107,9 @@ def verify_authorized_request(request: Request, expected_audience: str) -> str:
     except GoogleAuthError as exc:
         raise HTTPException(
             status_code=401,
-            detail=f"Invalid token: {exc}",
+            detail="Invalid token: %s" % exc,
         ) from exc
     except PyJWTError as exc:
         raise HTTPException(
-            status_code=401, detail=f"Invalid token: {exc}"
+            status_code=401, detail="Invalid token: %s" % exc
         ) from exc
