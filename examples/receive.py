@@ -22,9 +22,8 @@ def verify_authorized_request(request: Request, expected_audience: str) -> str:
     WARNING: Google automatically removes the signature of a JWT sent with the
     `X-Serverless-Authorization` header. Therefore, it is impossible to verify
     the token in the application code. For this reason, we must rely on Cloud
-    Run's authenticating proxy and IAM for authentication if the Google-signed
-    OpenID Connect ID token is provided using this header instead of the
-    standard `Authorization` header.
+    Run's authenticating proxy and IAM for authentication if the token is
+    provided using this header instead of the standard `Authorization` header.
 
     Furthermore, even if a service is publicly accessible, Google will still
     remove the signature of the JWT.
