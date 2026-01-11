@@ -37,8 +37,18 @@ resource "google_cloud_run_v2_service" "service_a" {
       command = ["uvicorn", "src.services.service_a.main:app", "--host", "0.0.0.0", "--port", "8080"]
 
       env {
+        name  = "APP_NAME"
+        value = "Service A"
+      }
+
+      env {
         name  = "SERVICE_B_URL"
         value = google_cloud_run_v2_service.service_b.uri
+      }
+
+      env {
+        name  = "DEBUG"
+        value = "True"
       }
     }
   }
@@ -53,8 +63,8 @@ resource "google_cloud_run_v2_service" "service_b" {
   name     = "service-b"
   location = var.region
 
-  # Only allow internal traffic.
-  ingress = "INGRESS_TRAFFIC_INTERNAL_ONLY"
+  # Allow direct access from the Internet.
+  ingress = "INGRESS_TRAFFIC_ALL"
 
   template {
     service_account = google_service_account.service_b.email
@@ -66,8 +76,13 @@ resource "google_cloud_run_v2_service" "service_b" {
       command = ["uvicorn", "src.services.service_b.main:app", "--host", "0.0.0.0", "--port", "8080"]
 
       env {
-        name  = "SERVICE_B_URL"
-        value = google_cloud_run_v2_service.service_b.uri
+        name  = "APP_NAME"
+        value = "Service B"
+      }
+
+      env {
+        name  = "DEBUG"
+        value = "True"
       }
     }
   }
@@ -75,12 +90,16 @@ resource "google_cloud_run_v2_service" "service_b" {
   depends_on = [google_project_service.run]
 }
 
-resource "google_cloud_run_v2_service_iam_member" "service_b_invoker" {
+resource "google_cloud_run_v2_service_iam_member" "service_a" {
+  name     = google_cloud_run_v2_service.service_a.name
+  location = google_cloud_run_v2_service.service_a.location
+  member   = "allUsers" # `allUsers` makes the service publicly accessible.
+  role     = "roles/run.invoker"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "service_b" {
   name     = google_cloud_run_v2_service.service_b.name
   location = google_cloud_run_v2_service.service_b.location
   member   = "serviceAccount:${google_service_account.service_a.email}"
   role     = "roles/run.invoker"
-
-  # NOTE: `allUsers` makes the service publicly accessible.
-  # members = ["allUsers"]
 }

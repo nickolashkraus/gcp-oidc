@@ -13,7 +13,6 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "Service B"
-    service_b_url: str = ""
     debug: bool = False
 
 

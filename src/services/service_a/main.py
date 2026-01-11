@@ -8,6 +8,7 @@ import logging
 
 import fastapi
 import httpx
+import jwt
 from google.auth.exceptions import GoogleAuthError
 from google.auth.transport.requests import Request as GoogleAuthRequest
 from google.oauth2.id_token import fetch_id_token
@@ -16,7 +17,7 @@ from src.services.service_a import settings
 from src.shared.app import create_app
 
 app_settings = settings.get_settings()
-app = create_app(app_name=app_settings.app_name)
+app = create_app(app_name=app_settings.app_name, debug=app_settings.debug)
 
 
 @app.get("/")
@@ -35,6 +36,10 @@ async def root(
             request=GoogleAuthRequest(),
             audience=app_settings.service_b_url,
         )
+        if app_settings.debug:
+            logging.debug(f"Token: {token}")
+            claims = jwt.decode(token, options={"verify_signature": False})
+            logging.debug(f"Decoded token: {claims}")
     except GoogleAuthError as exc:
         logging.error("Failed to fetch ID token: %s", exc)
         raise fastapi.HTTPException(

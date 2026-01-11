@@ -17,7 +17,7 @@ from src.services.service_b import settings
 from src.shared.app import create_app
 
 app_settings = settings.get_settings()
-app = create_app(app_name=app_settings.app_name)
+app = create_app(app_name=app_settings.app_name, debug=app_settings.debug)
 
 
 @app.get("/")
@@ -61,15 +61,23 @@ async def root(request: fastapi.Request):
     if app_settings.debug:
         logging.debug(f"Token: {token}")
 
+    # NOTE: The URL can come through as HTTP or HTTPS. Since the token audience
+    # uses HTTPS, the audience is constructed from the `Host` header of the
+    # request.
+    host = request.headers.get("host", "")
+    expected_audiences = [
+        f"http://{host}".rstrip("/"),
+        f"https://{host}".rstrip("/"),
+    ]
     # If `Authorization` is used, verify the token.
     if not is_x_serverless_authorization:
         try:
             claims = verify_oauth2_token(
                 id_token=token,
                 request=GoogleAuthRequest(),
-                audience=app_settings.service_b_url,
+                audience=expected_audiences,
             )
-            logging.info(f"Token verification succeeded. Claims: {claims}")
+            logging.debug(f"Token verification succeeded. Claims: {claims}")
         except GoogleAuthError as exc:
             logging.error(f"Token verification failed: {exc}")
             raise fastapi.HTTPException(
@@ -89,10 +97,10 @@ async def root(request: fastapi.Request):
                     "verify_aud": True,
                     "verify_iss": True,
                 },
-                audience=app_settings.service_b_url,
+                audience=expected_audiences,
                 issuer=["https://accounts.google.com", "accounts.google.com"],
             )
-            logging.info(f"Decoded token: {claims}")
+            logging.debug(f"Decoded token: {claims}")
         except PyJWTError as exc:
             logging.error(f"Failed to decode token: {exc}")
             raise fastapi.HTTPException(
