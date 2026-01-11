@@ -21,7 +21,7 @@ resource "google_service_account" "service_b" {
 # Service A (Calling Service).
 # Service A can make authenticated requests to Service B.
 resource "google_cloud_run_v2_service" "service_a" {
-  name     = "Service A"
+  name     = "service-a"
   location = var.region
 
   # Allow direct access from the Internet.
@@ -34,7 +34,7 @@ resource "google_cloud_run_v2_service" "service_a" {
       image = var.image
 
       # Override the entrypoint of the container.
-      command = ["uvicorn", "src:service_a:main:app", "--host", "0.0.0.0", "--port", "8080"]
+      command = ["uvicorn", "services.service_a.main:app", "--host", "0.0.0.0", "--port", "8080"]
 
       env {
         name  = "SERVICE_B_URL"
@@ -50,7 +50,7 @@ resource "google_cloud_run_v2_service" "service_a" {
 # Service B (Receiving Service).
 # Service B can receive authenticated requests from Service A.
 resource "google_cloud_run_v2_service" "service_b" {
-  name     = "Service B"
+  name     = "service-b"
   location = var.region
 
   # Only allow internal traffic.
@@ -63,7 +63,7 @@ resource "google_cloud_run_v2_service" "service_b" {
       image = var.image
 
       # Override the entrypoint of the container.
-      command = ["uvicorn", "src:service_b:main:app", "--host", "0.0.0.0", "--port", "8080"]
+      command = ["uvicorn", "services.service_b.main:app", "--host", "0.0.0.0", "--port", "8080"]
 
       env {
         name  = "SERVICE_B_URL"
