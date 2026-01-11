@@ -12,8 +12,8 @@ from google.auth.exceptions import GoogleAuthError
 from google.auth.transport.requests import Request as GoogleAuthRequest
 from google.oauth2.id_token import fetch_id_token
 
-from services.service_a import settings
-from shared.app import create_app
+from src.services.service_a import settings
+from src.shared.app import create_app
 
 app_settings = settings.get_settings()
 app = create_app(app_name=app_settings.app_name)

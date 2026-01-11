@@ -12,7 +12,7 @@ class Settings(BaseSettings):
         env_nested_delimiter="__",
     )
 
-    app_name: str = ""
+    app_name: str = "Service A"
     service_b_url: str = ""
     debug: bool = False
 

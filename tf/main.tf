@@ -34,7 +34,7 @@ resource "google_cloud_run_v2_service" "service_a" {
       image = var.image
 
       # Override the entrypoint of the container.
-      command = ["uvicorn", "services.service_a.main:app", "--host", "0.0.0.0", "--port", "8080"]
+      command = ["uvicorn", "src.services.service_a.main:app", "--host", "0.0.0.0", "--port", "8080"]
 
       env {
         name  = "SERVICE_B_URL"
@@ -63,7 +63,7 @@ resource "google_cloud_run_v2_service" "service_b" {
       image = var.image
 
       # Override the entrypoint of the container.
-      command = ["uvicorn", "services.service_b.main:app", "--host", "0.0.0.0", "--port", "8080"]
+      command = ["uvicorn", "src.services.service_b.main:app", "--host", "0.0.0.0", "--port", "8080"]
 
       env {
         name  = "SERVICE_B_URL"
